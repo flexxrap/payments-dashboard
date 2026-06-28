@@ -4,8 +4,8 @@
 Помогает менеджерам видеть, по каким оплатам акты ещё не отправлены, какие висят без подписи
 слишком долго, а какие уже закрыты.
 
-- **Backend (Railway):** _добавьте URL после деплоя, см. раздел «Деплой»_
-- **Frontend (Vercel):** _добавьте URL после деплоя, см. раздел «Деплой»_
+- **Frontend (Vercel):** https://frontend-ivory-rho-38.vercel.app
+- **Backend (Railway):** https://payments-dashboard-production-c39d.up.railway.app — Swagger: [`/docs`](https://payments-dashboard-production-c39d.up.railway.app/docs)
 
 ## Стек и почему он выбран
 
@@ -179,17 +179,20 @@ UI: http://localhost:5173
    чтобы попали и `backend/`, и `migrations/`). При старте контейнер выполняет
    `alembic upgrade head`, поднимает API на `$PORT`.
 4. Переменные окружения:
-   - `DATABASE_URL` — подставляется плагином Postgres;
-   - `CORS_ORIGINS` — URL фронтенда с Vercel (например `https://payments-dashboard.vercel.app`);
-   - `RUN_SEED=1` — однократно, чтобы залить демо-данные на чистую БД (потом убрать).
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (reference на плагин Postgres);
+   - `CORS_ORIGINS` — URL фронтенда с Vercel (`https://frontend-ivory-rho-38.vercel.app`);
+   - `RUN_SEED=1` — однократно для заливки демо-данных, затем `RUN_SEED=0` (миграция
+     `alembic upgrade head` идемпотентна, данные в Postgres сохраняются между рестартами).
 5. Скопировать публичный URL сервиса и вставить выше и в `VITE_API_URL` фронтенда.
+
+Текущий деплой развёрнут именно так: Postgres-плагин + `DATABASE_URL` reference, `RUN_SEED=0`.
 
 ### Frontend → Vercel
 
 1. `vercel` / `vercel --prod` или импорт репозитория в дашборде.
 2. **Root Directory = `frontend`** (там лежит `vercel.json` с фреймворком Vite и SPA-rewrites).
-3. Переменная окружения `VITE_API_URL=<публичный URL Railway>`.
+3. Переменная окружения `VITE_API_URL=<публичный URL Railway>` (build-time для Vite).
 4. Скопировать выданный URL и вставить выше; добавить его в `CORS_ORIGINS` на Railway.
 
-> Реальные URL появятся здесь после прохождения логина в Railway/Vercel — авторизация в эти
-> аккаунты выполняется владельцем проекта.
+Проект развёрнут: фронтенд на Vercel (`VITE_API_URL` указывает на Railway-backend), CORS на
+backend сужен до домена фронтенда.
