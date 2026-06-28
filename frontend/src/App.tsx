@@ -11,6 +11,7 @@ import {
   updateAct,
 } from "./api/client";
 import type {
+  ActUpdate,
   Client,
   DashboardSummary,
   Payment,
@@ -55,7 +56,7 @@ export default function App() {
     loadPayments();
   }, [loadPayments]);
 
-  async function patchAct(paymentId: number, payload: { is_sent?: boolean; is_signed?: boolean }) {
+  async function patchAct(paymentId: number, payload: ActUpdate) {
     const updated = await updateAct(paymentId, payload);
     setPayments((prev) => prev.map((p) => (p.id === paymentId ? updated : p)));
     loadAggregates();
@@ -94,6 +95,7 @@ export default function App() {
           payments={payments}
           onMarkSent={(id) => patchAct(id, { is_sent: true })}
           onMarkSigned={(id) => patchAct(id, { is_signed: true })}
+          onSaveComment={(id, comment) => patchAct(id, { manager_comment: comment })}
         />
       </section>
     </div>

@@ -7,18 +7,31 @@ interface Props {
   payments: Payment[];
   onMarkSent: (paymentId: number) => void;
   onMarkSigned: (paymentId: number) => void;
+  onSaveComment: (paymentId: number, comment: string) => Promise<void>;
 }
 
-export default function PaymentsTable({ payments, onMarkSent, onMarkSigned }: Props) {
+export default function PaymentsTable({
+  payments,
+  onMarkSent,
+  onMarkSigned,
+  onSaveComment,
+}: Props) {
   const [pending, setPending] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState("");
 
-  async function run(action: () => void, id: number) {
+  async function run(action: () => void | Promise<void>, id: number) {
     setPending(id);
     try {
       await action();
     } finally {
       setPending(null);
     }
+  }
+
+  async function saveComment(payment: Payment) {
+    await run(() => onSaveComment(payment.id, draft.trim()), payment.id);
+    setEditingId(null);
   }
 
   return (
@@ -32,7 +45,8 @@ export default function PaymentsTable({ payments, onMarkSent, onMarkSigned }: Pr
             <th className="px-4 py-3">Сумма</th>
             <th className="px-4 py-3">Назначение</th>
             <th className="px-4 py-3">Этап</th>
-            <th className="px-4 py-3">Статус акта</th>
+            <th className="px-4 py-3">Акт</th>
+            <th className="px-4 py-3">Комментарий</th>
             <th className="px-4 py-3">Действия</th>
           </tr>
         </thead>
@@ -57,7 +71,73 @@ export default function PaymentsTable({ payments, onMarkSent, onMarkSigned }: Pr
                   {payment.service_stage}
                 </td>
                 <td className="px-4 py-3">
-                  {act ? <ActStatusBadge status={act.status} /> : "—"}
+                  {act ? (
+                    <div className="space-y-1">
+                      <ActStatusBadge status={act.status} />
+                      <div className="text-xs text-slate-500">
+                        Отправлен:{" "}
+                        {act.is_sent ? (
+                          <span className="text-slate-700">
+                            {act.sent_at ? formatDate(act.sent_at) : "да"}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        Подписан:{" "}
+                        {act.is_signed ? (
+                          <span className="text-slate-700">
+                            {act.signed_at ? formatDate(act.signed_at) : "да"}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="min-w-[200px] px-4 py-3">
+                  {editingId === payment.id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        rows={2}
+                        className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs focus:border-slate-500 focus:outline-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          disabled={busy}
+                          onClick={() => saveComment(payment)}
+                          className="rounded bg-slate-800 px-2 py-1 text-xs text-white disabled:bg-slate-300"
+                        >
+                          Сохранить
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      disabled={!act}
+                      onClick={() => {
+                        setEditingId(payment.id);
+                        setDraft(act?.manager_comment ?? "");
+                      }}
+                      className="w-full text-left text-xs text-slate-600 hover:text-slate-900"
+                    >
+                      {act?.manager_comment || (
+                        <span className="text-slate-400">+ комментарий</span>
+                      )}
+                    </button>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-2 sm:flex-row">
@@ -82,7 +162,7 @@ export default function PaymentsTable({ payments, onMarkSent, onMarkSigned }: Pr
           })}
           {payments.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-4 py-6 text-center text-slate-400">
+              <td colSpan={9} className="px-4 py-6 text-center text-slate-400">
                 Нет оплат по выбранным фильтрам
               </td>
             </tr>
