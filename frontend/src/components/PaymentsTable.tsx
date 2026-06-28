@@ -5,15 +5,15 @@ import ActStatusBadge from "./ActStatusBadge";
 
 interface Props {
   payments: Payment[];
-  onMarkSent: (paymentId: number) => void;
-  onMarkSigned: (paymentId: number) => void;
+  onSetSent: (paymentId: number, value: boolean) => Promise<void>;
+  onSetSigned: (paymentId: number, value: boolean) => Promise<void>;
   onSaveComment: (paymentId: number, comment: string) => Promise<void>;
 }
 
 export default function PaymentsTable({
   payments,
-  onMarkSent,
-  onMarkSigned,
+  onSetSent,
+  onSetSigned,
   onSaveComment,
 }: Props) {
   const [pending, setPending] = useState<number | null>(null);
@@ -141,20 +141,43 @@ export default function PaymentsTable({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <button
-                      disabled={busy || !act || act.is_sent}
-                      onClick={() => run(() => onMarkSent(payment.id), payment.id)}
-                      className="rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                    >
-                      Акт отправлен
-                    </button>
-                    <button
-                      disabled={busy || !act || act.is_signed}
-                      onClick={() => run(() => onMarkSigned(payment.id), payment.id)}
-                      className="rounded-lg bg-green-600 px-2.5 py-1 text-xs font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                    >
-                      Акт подписан
-                    </button>
+                    {act && !act.is_sent && (
+                      <button
+                        disabled={busy}
+                        onClick={() => run(() => onSetSent(payment.id, true), payment.id)}
+                        className="rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-medium text-white disabled:bg-slate-200 disabled:text-slate-400"
+                      >
+                        Акт отправлен
+                      </button>
+                    )}
+                    {act && act.is_sent && (
+                      <button
+                        disabled={busy || act.is_signed}
+                        title={act.is_signed ? "Сначала снимите подпись" : undefined}
+                        onClick={() => run(() => onSetSent(payment.id, false), payment.id)}
+                        className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
+                      >
+                        Отменить отправку
+                      </button>
+                    )}
+                    {act && !act.is_signed && (
+                      <button
+                        disabled={busy}
+                        onClick={() => run(() => onSetSigned(payment.id, true), payment.id)}
+                        className="rounded-lg bg-green-600 px-2.5 py-1 text-xs font-medium text-white disabled:bg-slate-200 disabled:text-slate-400"
+                      >
+                        Акт подписан
+                      </button>
+                    )}
+                    {act && act.is_signed && (
+                      <button
+                        disabled={busy}
+                        onClick={() => run(() => onSetSigned(payment.id, false), payment.id)}
+                        className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:text-slate-300"
+                      >
+                        Снять подпись
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

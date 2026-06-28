@@ -93,8 +93,8 @@ export default function App() {
         />
         <PaymentsTable
           payments={payments}
-          onMarkSent={(id) => patchAct(id, { is_sent: true })}
-          onMarkSigned={(id) => patchAct(id, { is_signed: true })}
+          onSetSent={(id, value) => patchAct(id, { is_sent: value })}
+          onSetSigned={(id, value) => patchAct(id, { is_signed: value })}
           onSaveComment={(id, comment) => patchAct(id, { manager_comment: comment })}
         />
       </section>
